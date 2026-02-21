@@ -1,7 +1,7 @@
-package com.mandujano.foodieexpress.features.menu.data.mapper
+package com.mandujano.foodieexpress.features.menu.data.datasources.remote.mapper
 
-import com.mandujano.foodieexpress.features.menu.data.dto.DishDto
-import com.mandujano.foodieexpress.features.menu.domain.model.Dish
+import com.mandujano.foodieexpress.features.menu.data.datasources.remote.models.DishDto
+import com.mandujano.foodieexpress.features.menu.domain.entities.Dish
 
 fun DishDto.toDomain(): Dish {
     return Dish(

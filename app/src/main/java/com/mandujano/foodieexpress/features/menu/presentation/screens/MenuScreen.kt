@@ -1,96 +1,105 @@
 package com.mandujano.foodieexpress.features.menu.presentation.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.mandujano.foodieexpress.features.menu.domain.model.Dish
-import com.mandujano.foodieexpress.features.menu.presentation.viewmodels.MenuUiState
+import com.mandujano.foodieexpress.features.menu.domain.entities.Dish
 import com.mandujano.foodieexpress.features.menu.presentation.viewmodels.MenuViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MenuScreen(
-    viewModel: MenuViewModel = viewModel(factory = MenuViewModel.Factory),
-    onDishClick: (String) -> Unit
+    onDishClick: (String) -> Unit,
+    viewModel: MenuViewModel = hiltViewModel()
 ) {
-    val uiState = viewModel.uiState
+    LaunchedEffect(Unit) {
+        viewModel.getDishes()
+    }
+
+    val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(title = { Text("Foodie Express 🍔") })
+            TopAppBar(
+                title = { Text("Menú") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
         }
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center
+                .padding(paddingValues)
         ) {
-            when (uiState) {
-                is MenuUiState.Loading -> CircularProgressIndicator()
-                is MenuUiState.Error -> {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Error al cargar menu!")
-                        Button(onClick = { viewModel.getMenu() }) { Text("Reintentar") }
+            when {
+                uiState.isLoading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+                uiState.error != null -> {
+                    Text(
+                        text = "Error: ${uiState.error}",
+                        modifier = Modifier.align(Alignment.Center),
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        items(uiState.dishes) {
+                            DishItem(dish = it, onDishClick = onDishClick)
+                        }
                     }
                 }
-                is MenuUiState.Succes -> {
-                    DishList(dishes = uiState.dishes, onDishClick = onDishClick)
-                }
             }
         }
     }
 }
 
 @Composable
-fun DishList(dishes: List<Dish>, onDishClick: (String) -> Unit) {
-    LazyColumn(
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(dishes) { dish ->
-            DishCard(dish = dish, onClick = { onDishClick(dish.id.toString()) })
-        }
-    }
-}
-
-@Composable
-fun DishCard(dish: Dish, onClick: () -> Unit) {
+fun DishItem(
+    dish: Dish,
+    onDishClick: (String) -> Unit
+) {
     Card(
-        onClick = onClick,
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onDishClick(dish.id.toString()) },
+        elevation = CardDefaults.cardElevation(4.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Column {
             AsyncImage(
                 model = dish.imageUrl,
-                contentDescription = dish.name,
-                modifier = Modifier.size(80.dp),
+                contentDescription = "Imagen de ${dish.name}",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp),
                 contentScale = ContentScale.Crop
             )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column {
-                Text(text = dish.name, style = MaterialTheme.typography.titleMedium)
-                Text(text = "$${dish.price}", style = MaterialTheme.typography.bodyMedium)
-                Text(
-                    text = dish.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    maxLines = 2
-                )
-            }
+            Text(
+                text = dish.name,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(16.dp)
+            )
         }
     }
 }

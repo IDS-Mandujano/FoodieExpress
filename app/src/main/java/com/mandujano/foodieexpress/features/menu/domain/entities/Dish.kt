@@ -1,4 +1,4 @@
-package com.mandujano.foodieexpress.features.menu.domain.model
+package com.mandujano.foodieexpress.features.menu.domain.entities
 
 data class Dish(
     val id: Int,

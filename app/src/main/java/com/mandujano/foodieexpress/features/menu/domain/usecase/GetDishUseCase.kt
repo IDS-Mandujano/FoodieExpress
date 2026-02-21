@@ -5,18 +5,19 @@ import com.mandujano.foodieexpress.features.menu.domain.repositories.DishReposit
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
-class GetDishByIdUseCase @Inject constructor(
+class GetDishUseCase @Inject constructor(
     private val repository: DishRepository
 ) {
 
-    suspend operator fun invoke(id: String): Result<List<Dish>> {
+    suspend operator fun invoke(): Result<List<Dish>> {
         return try {
-            val dish = repository.getDishById(id).first()
+            val dishes = repository.getDishes().first()
+            val filteredDishes = dishes.filter { it.name.isNotBlank() }
 
-            if (dish.name.isNotBlank()) {
-                Result.success(listOf(dish))
+            if (filteredDishes.isEmpty()){
+                Result.failure(Exception("No se encontraron platos"))
             } else {
-                Result.failure(Exception("No se encontró el plato o no es válido"))
+                Result.success(filteredDishes)
             }
         } catch (e: Exception){
             Result.failure(e)

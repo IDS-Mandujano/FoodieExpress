@@ -1,5 +1,6 @@
 package com.mandujano.foodieexpress.core.di
 
+import com.mandujano.foodieexpress.core.di.FoodieExpressRetrofit
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -13,6 +14,7 @@ import javax.inject.Singleton
 object NetworkModule {
     @Provides
     @Singleton
+    @FoodieExpressRetrofit
     fun provideRetrofit() : Retrofit {
         return Retrofit.Builder()
             .baseUrl("https://www.themealdb.com/api/json/v1/1/")

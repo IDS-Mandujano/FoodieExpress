@@ -1,15 +1,16 @@
-package com.mandujano.foodieexpress.features.menu.data.repository
+package com.mandujano.foodieexpress.features.menu.data.repositories
 
-import com.mandujano.foodieexpress.features.menu.data.mapper.toDomain
-import com.mandujano.foodieexpress.features.menu.data.remote.FoodieApi
-import com.mandujano.foodieexpress.features.menu.domain.model.Dish
-import com.mandujano.foodieexpress.features.menu.domain.repository.MenuRepository
+import com.mandujano.foodieexpress.features.menu.data.datasources.remote.api.FoodieExpressApi
+import com.mandujano.foodieexpress.features.menu.data.datasources.remote.mapper.toDomain
+import com.mandujano.foodieexpress.features.menu.domain.entities.Dish
+import com.mandujano.foodieexpress.features.menu.domain.repositories.DishRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import javax.inject.Inject
 
-class MenuRepositoryImpl(
-    private val api: FoodieApi
-) : MenuRepository {
+class DishRepositoryImpl @Inject constructor(
+    private val api: FoodieExpressApi
+) : DishRepository {
 
     override suspend fun getDishes(): Flow<List<Dish>> = flow {
 

@@ -1,4 +1,4 @@
-package com.mandujano.foodieexpress.features.menu.data.dto
+package com.mandujano.foodieexpress.features.menu.data.datasources.remote.models
 
 import com.google.gson.annotations.SerializedName
 

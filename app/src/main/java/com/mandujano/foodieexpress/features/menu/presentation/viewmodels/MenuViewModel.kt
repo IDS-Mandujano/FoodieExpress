@@ -1,57 +1,54 @@
 package com.mandujano.foodieexpress.features.menu.presentation.viewmodels
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
-import com.mandujano.foodieexpress.FoodieApplication
-import com.mandujano.foodieexpress.features.menu.domain.usecase.GetMenuUseCase
-import kotlinx.coroutines.flow.catch
+import com.mandujano.foodieexpress.features.menu.domain.entities.Dish
+import com.mandujano.foodieexpress.features.menu.domain.usecase.GetDishByIdUseCase
+import com.mandujano.foodieexpress.features.menu.domain.usecase.GetDishUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class MenuViewModel (
-    private val getMenuUseCase: GetMenuUseCase
+
+data class MenuUiState(
+    val isLoading: Boolean = false,
+    val dishes: List<Dish> = emptyList(),
+    val selectedDish: Dish? = null,
+    val error: String? = null
+)
+
+@HiltViewModel
+class MenuViewModel @Inject constructor(
+    private val getDishUseCase: GetDishUseCase,
+    private val getDishByIdUseCase: GetDishByIdUseCase
 ) : ViewModel() {
 
-    var uiState : MenuUiState by mutableStateOf(MenuUiState.Loading)
-        private set
+    private val _uiState = MutableStateFlow(MenuUiState())
+    val uiState: StateFlow<MenuUiState> = _uiState
 
-    init {
-        getMenu()
-    }
-
-    fun getMenu() {
+    fun getDishes() {
         viewModelScope.launch {
-
-            uiState = MenuUiState.Loading
-
-            getMenuUseCase()
-                .catch {
-                    uiState = MenuUiState.Error
-                }
-                .collect { dishes ->
-                    uiState = MenuUiState.Succes(dishes)
-                }
-        }
-    }
-
-    companion object {
-        val Factory : ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                val application = (this[APPLICATION_KEY] as FoodieApplication)
-
-                val repository = application.container.menuRepository
-
-                MenuViewModel (
-                    getMenuUseCase = GetMenuUseCase(repository)
-                )
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            val result = getDishUseCase()
+            result.onSuccess {
+                _uiState.value = _uiState.value.copy(isLoading = false, dishes = it)
+            }.onFailure {
+                _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
             }
         }
     }
 
+    fun getDishById(id: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            val result = getDishByIdUseCase(id)
+            result.onSuccess {
+                _uiState.value = _uiState.value.copy(isLoading = false, selectedDish = it.firstOrNull())
+            }.onFailure {
+                _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
+            }
+        }
+    }
 }

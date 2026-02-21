@@ -1,78 +1,97 @@
 package com.mandujano.foodieexpress.features.menu.presentation.screens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-
-import com.mandujano.foodieexpress.features.menu.presentation.viewmodels.DetailUiState
-import com.mandujano.foodieexpress.features.menu.presentation.viewmodels.DetailViewModel
+import com.mandujano.foodieexpress.features.menu.presentation.viewmodels.MenuViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(
     dishId: String,
     onBackClick: () -> Unit,
-    viewModel: DetailViewModel = viewModel(factory = DetailViewModel.Factory)
+    viewModel: MenuViewModel = hiltViewModel()
 ) {
-
     LaunchedEffect(dishId) {
-        viewModel.loadDish(dishId)
+        viewModel.getDishById(dishId)
     }
 
-    val state = viewModel.uiState
+    val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Detalles") },
+                title = { Text(uiState.selectedDish?.name ?: "Detalle") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, "Regresar")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
             )
         }
-    ) { padding ->
-        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-            when (state) {
-                is DetailUiState.Loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                is DetailUiState.Error -> Text("Error al cargar", Modifier.align(Alignment.Center))
-                is DetailUiState.Success -> DishDetailContent(state.dish)
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            when {
+                uiState.isLoading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+                uiState.error != null -> {
+                    Text(
+                        text = "Error: ${uiState.error}",
+                        modifier = Modifier.align(Alignment.Center),
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                uiState.selectedDish != null -> {
+                    val dish = uiState.selectedDish!!
+                    Column(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        AsyncImage(
+                            model = dish.imageUrl,
+                            contentDescription = "Imagen de ${dish.name}",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(250.dp),
+                            contentScale = ContentScale.Crop
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = dish.name,
+                            style = MaterialTheme.typography.headlineLarge,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = dish.description.takeIf { it.isNotBlank() } ?: "No hay descripción disponible.",
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                    }
+                }
             }
-        }
-    }
-}
-
-@Composable
-fun DishDetailContent(dish: com.mandujano.foodieexpress.features.menu.domain.model.Dish) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-    ) {
-        AsyncImage(
-            model = dish.imageUrl,
-            contentDescription = null,
-            modifier = Modifier.fillMaxWidth().height(250.dp),
-            contentScale = ContentScale.Crop
-        )
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(dish.name, style = MaterialTheme.typography.headlineMedium)
-            Text("$${dish.price}", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("Instrucciones:", style = MaterialTheme.typography.titleMedium)
-            Text(dish.description, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

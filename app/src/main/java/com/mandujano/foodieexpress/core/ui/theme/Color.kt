@@ -1,4 +1,4 @@
-package com.mandujano.foodieexpress.ui.theme
+package com.mandujano.foodieexpress.core.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

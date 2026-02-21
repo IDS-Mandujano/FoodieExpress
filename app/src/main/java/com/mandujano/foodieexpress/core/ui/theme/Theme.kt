@@ -1,6 +1,5 @@
-package com.mandujano.foodieexpress.ui.theme
+package com.mandujano.foodieexpress.core.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
